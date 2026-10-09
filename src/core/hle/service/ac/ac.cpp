@@ -3,6 +3,7 @@
 // Refer to the misc/licenses/gplv2.txt file included.
 
 #include <algorithm>
+#include <chrono>
 #include <cstring>
 #include <vector>
 #include "common/archives.h"
@@ -28,6 +29,9 @@ SERIALIZE_EXPORT_IMPL(Service::AC::Module)
 SERVICE_CONSTRUCT_IMPL(Service::AC::Module)
 
 namespace Service::AC {
+
+constexpr std::chrono::nanoseconds ScanAPsDelay = std::chrono::milliseconds(1500);
+
 void Module::Interface::CreateDefaultConfig(Kernel::HLERequestContext& ctx) {
     IPC::RequestParser rp(ctx);
 
@@ -221,13 +225,18 @@ void Module::Interface::ScanAPs(Kernel::HLERequestContext& ctx) {
     const std::size_t num_entries =
         std::min(access_points.size(), size / sizeof(FakeAP::APEntry));
 
-    std::vector<u8> buffer(size);
-    std::memcpy(buffer.data(), access_points.data(), num_entries * sizeof(FakeAP::APEntry));
+    // Only the filled entries are returned; the static buffer size tells the caller how many.
+    std::vector<u8> buffer(num_entries * sizeof(FakeAP::APEntry));
+    std::memcpy(buffer.data(), access_points.data(), buffer.size());
 
     IPC::RequestBuilder rb = rp.MakeBuilder(2, 2);
     rb.Push(ResultSuccess);
     rb.Push<u32>(static_cast<u32>(num_entries));
     rb.PushStaticBuffer(std::move(buffer), 0);
+
+    // A real scan takes over a second. Some games (e.g. The Denpa Men) time the call and
+    // discard results that come back in under one second, so delay the reply.
+    ctx.SleepClientThread("AC::ScanAPs", ScanAPsDelay, nullptr);
 
     LOG_DEBUG(Service_AC, "called, size=0x{:X}, returned {} fake access points", size,
               num_entries);

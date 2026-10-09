@@ -10,6 +10,7 @@
 #include <set>
 #include <string>
 #include <fmt/format.h>
+#include "common/file_util.h"
 #include "common/logging/log.h"
 #include "core/hle/service/ac/fake_ap.h"
 
@@ -105,9 +106,36 @@ void Generate() {
     LOG_INFO(Service_AC, "Generated {} fake access points", access_points.size());
 }
 
+/**
+ * Loads access points from <sysdata>/fake_ap.bin if it exists. The file holds raw ScanAPs
+ * entries (0x34 bytes each); reading stops at the first entry whose SSID length is zero.
+ */
+bool LoadFromFile() {
+    const std::string path = FileUtil::GetUserPath(FileUtil::UserPath::SysDataDir) + "fake_ap.bin";
+    FileUtil::IOFile file(path, "rb");
+    if (!file.IsOpen()) {
+        return false;
+    }
+
+    std::vector<APEntry> entries(file.GetSize() / sizeof(APEntry));
+    entries.resize(file.ReadArray(entries.data(), entries.size()));
+    const auto end = std::find_if(entries.begin(), entries.end(),
+                                  [](const APEntry& e) { return e.ssid_length == 0; });
+    entries.erase(end, entries.end());
+
+    access_points = std::move(entries);
+    last_generated.reset(); // Regenerate once the file is removed
+    LOG_INFO(Service_AC, "Loaded {} access points from {}", access_points.size(), path);
+    return true;
+}
+
 } // Anonymous namespace
 
 const std::vector<APEntry>& GetAccessPoints() {
+    if (LoadFromFile()) {
+        return access_points;
+    }
+
     const auto now = std::chrono::steady_clock::now();
     if (!last_generated ||
         now - *last_generated >= std::chrono::seconds(RegenerateIntervalSeconds)) {
