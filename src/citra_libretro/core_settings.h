@@ -31,6 +31,8 @@ struct CoreSettings {
 
     bool enable_motion;
 
+    bool motion_from_right_stick;
+
     float motion_sensitivity;
 
 } extern settings;

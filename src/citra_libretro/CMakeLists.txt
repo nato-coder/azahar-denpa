@@ -9,6 +9,8 @@ add_library(citra_libretro_common OBJECT
         input/input_factory.h
         input/mouse_tracker.cpp
         input/mouse_tracker.h
+        ../input_common/stick_motion.cpp
+        ../input_common/stick_motion.h
         $<$<BOOL:${ENABLE_VULKAN}>: libretro_vk.cpp libretro_vk.h>
         environment.cpp
         environment.h
