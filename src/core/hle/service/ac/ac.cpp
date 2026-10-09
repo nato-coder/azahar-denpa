@@ -2,6 +2,8 @@
 // Licensed under GPLv2 or any later version
 // Refer to the misc/licenses/gplv2.txt file included.
 
+#include <algorithm>
+#include <cstring>
 #include <vector>
 #include "common/archives.h"
 #include "common/common_types.h"
@@ -18,6 +20,7 @@
 #include "core/hle/service/ac/ac.h"
 #include "core/hle/service/ac/ac_i.h"
 #include "core/hle/service/ac/ac_u.h"
+#include "core/hle/service/ac/fake_ap.h"
 #include "core/hle/service/soc/soc_u.h"
 #include "core/memory.h"
 
@@ -207,6 +210,27 @@ void Module::Interface::IsConnected(Kernel::HLERequestContext& ctx) {
 
     LOG_DEBUG(Service_AC, "(STUBBED) called unk=0x{:08X} descriptor=0x{:08X} param=0x{:08X}", unk,
               unk_descriptor, unk_param);
+}
+
+void Module::Interface::ScanAPs(Kernel::HLERequestContext& ctx) {
+    IPC::RequestParser rp(ctx);
+    const u32 size = rp.Pop<u32>();
+    rp.Skip(2, false); // ProcessId descriptor
+
+    const auto& access_points = FakeAP::GetAccessPoints();
+    const std::size_t num_entries =
+        std::min(access_points.size(), size / sizeof(FakeAP::APEntry));
+
+    std::vector<u8> buffer(size);
+    std::memcpy(buffer.data(), access_points.data(), num_entries * sizeof(FakeAP::APEntry));
+
+    IPC::RequestBuilder rb = rp.MakeBuilder(2, 2);
+    rb.Push(ResultSuccess);
+    rb.Push<u32>(static_cast<u32>(num_entries));
+    rb.PushStaticBuffer(std::move(buffer), 0);
+
+    LOG_DEBUG(Service_AC, "called, size=0x{:X}, returned {} fake access points", size,
+              num_entries);
 }
 
 void Module::Interface::SetClientVersion(Kernel::HLERequestContext& ctx) {

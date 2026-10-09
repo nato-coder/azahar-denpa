@@ -169,6 +169,20 @@ public:
         void IsConnected(Kernel::HLERequestContext& ctx);
 
         /**
+         * AC::ScanAPs service function
+         *  Inputs:
+         *      1 : Output buffer size
+         *      2 : ProcessId Header
+         *      3 : ProcessId
+         *  Outputs:
+         *      1 : Result of function, 0 on success, otherwise error code
+         *      2 : Number of access point entries written
+         *      3 : Static buffer descriptor
+         *      4 : Pointer to the access point entries (0x34 bytes each)
+         */
+        void ScanAPs(Kernel::HLERequestContext& ctx);
+
+        /**
          * AC::SetClientVersion service function
          *  Inputs:
          *      1 : Used SDK Version

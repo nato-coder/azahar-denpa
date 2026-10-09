@@ -201,6 +201,8 @@ add_library(citra_core STATIC EXCLUDE_FROM_ALL
     hle/service/ac/ac_i.h
     hle/service/ac/ac_u.cpp
     hle/service/ac/ac_u.h
+    hle/service/ac/fake_ap.cpp
+    hle/service/ac/fake_ap.h
     hle/service/act/act.cpp
     hle/service/act/act.h
     hle/service/act/act_errors.cpp
