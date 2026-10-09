@@ -1473,6 +1473,46 @@ bool GMainWindow::LoadROM(const QString& filename) {
     return true;
 }
 
+// Runs save_sync.ps1 (next to the executable) to exchange save data with other devices.
+// Does nothing when the script is not present.
+static void RunSaveSync(QWidget* parent, const QString& mode) {
+#ifdef _WIN32
+    const QString script = QCoreApplication::applicationDirPath() + QStringLiteral("/save_sync.ps1");
+    if (!QFileInfo::exists(script)) {
+        return;
+    }
+
+    QApplication::setOverrideCursor(Qt::WaitCursor);
+    QProcess process;
+    process.setProcessChannelMode(QProcess::MergedChannels);
+    process.start(QStringLiteral("powershell.exe"),
+                  {QStringLiteral("-NoProfile"), QStringLiteral("-ExecutionPolicy"),
+                   QStringLiteral("Bypass"), QStringLiteral("-File"),
+                   QDir::toNativeSeparators(script), mode});
+    const bool finished = process.waitForFinished(60000);
+    QApplication::restoreOverrideCursor();
+
+    const QString output = QString::fromLocal8Bit(process.readAll()).trimmed();
+    LOG_INFO(Frontend, "save_sync {}: exit={} {}", mode.toStdString(),
+             finished ? process.exitCode() : -1, output.toStdString());
+
+    if (!finished) {
+        process.kill();
+        QMessageBox::warning(parent, QStringLiteral("セーブ共有"),
+                             QStringLiteral("セーブ共有の処理が60秒以内に終わりませんでした。"));
+    } else if (process.exitCode() == 2) {
+        QMessageBox::warning(parent, QStringLiteral("セーブ共有: 競合"),
+                             QStringLiteral("他の端末でもセーブが更新されていました。"
+                                            "こちらのセーブは iCloud Drive に"
+                                            "競合ファイルとして残しました。\n\n") +
+                                 output);
+    } else if (process.exitCode() != 0) {
+        QMessageBox::warning(parent, QStringLiteral("セーブ共有: エラー"),
+                             QStringLiteral("セーブ共有に失敗しました。\n\n") + output);
+    }
+#endif
+}
+
 void GMainWindow::BootGame(const QString& filename) {
     if (emu_thread) {
         ShutdownGame();
@@ -1495,6 +1535,10 @@ void GMainWindow::BootGame(const QString& filename) {
     }
 
     show_artic_label = is_artic;
+
+    if (!is_artic) {
+        RunSaveSync(this, QStringLiteral("import"));
+    }
 
     LOG_INFO(Frontend, "Azahar starting...");
     if (!is_artic) {
@@ -1737,6 +1781,8 @@ void GMainWindow::ShutdownGame() {
     // When closing the game, destroy the GLWindow to clear the context after the game is closed
     render_window->ReleaseRenderTarget();
     secondary_window->ReleaseRenderTarget();
+
+    RunSaveSync(this, QStringLiteral("export"));
 }
 
 #ifdef ENABLE_DEVELOPER_OPTIONS
