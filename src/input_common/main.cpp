@@ -16,6 +16,7 @@
 #include "input_common/motion_emu.h"
 #include "input_common/sdl/sdl.h"
 #include "input_common/sdl/sdl_impl.h"
+#include "input_common/stick_motion.h"
 #include "input_common/touch_from_button.h"
 #include "input_common/udp/udp.h"
 
@@ -45,6 +46,7 @@ void Init() {
                                                 std::make_shared<AnalogFromButton>());
     motion_emu = std::make_shared<MotionEmu>();
     Input::RegisterFactory<Input::MotionDevice>("motion_emu", motion_emu);
+    Input::RegisterFactory<Input::MotionDevice>("stick_motion", std::make_shared<StickMotion>());
     Input::RegisterFactory<Input::TouchDevice>("touch_from_button",
                                                std::make_shared<TouchFromButtonFactory>());
 
@@ -65,6 +67,7 @@ void Shutdown() {
     Input::UnregisterFactory<Input::AnalogDevice>("analog_from_button");
     Input::UnregisterFactory<Input::MotionDevice>("motion_emu");
     motion_emu.reset();
+    Input::UnregisterFactory<Input::MotionDevice>("stick_motion");
     Input::UnregisterFactory<Input::TouchDevice>("emu_window");
     Input::UnregisterFactory<Input::TouchDevice>("touch_from_button");
     sdl.reset();
