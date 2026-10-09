@@ -13,6 +13,7 @@
 
 #include "citra_libretro/environment.h"
 #include "citra_libretro/input/input_factory.h"
+#include "input_common/stick_motion.h"
 
 namespace LibRetro {
 
@@ -193,11 +194,13 @@ void Init() {
     RegisterFactory<ButtonDevice>("libretro", std::make_shared<LibRetroButtonFactory>());
     RegisterFactory<AnalogDevice>("libretro", std::make_shared<LibRetroAxisFactory>());
     RegisterFactory<MotionDevice>("libretro", std::make_shared<LibRetroMotionFactory>());
+    RegisterFactory<MotionDevice>("stick_motion", std::make_shared<InputCommon::StickMotion>());
 }
 
 void Shutdown() {
     using namespace ::Input;
     UnregisterFactory<ButtonDevice>("libretro");
+    UnregisterFactory<MotionDevice>("stick_motion");
     UnregisterFactory<AnalogDevice>("libretro");
     UnregisterFactory<MotionDevice>("libretro");
 

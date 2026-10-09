@@ -19,7 +19,6 @@ public:
      * Creates a motion device driven by an analog stick
      * @param params contains parameters for creating the device:
      *     - "analog": serialized analog device params; defaults to the current profile's C-Stick
-     *     - "update_period": update period in milliseconds
      *     - "max_rate": turning speed in degrees per second at full deflection
      *     - "invert_x", "invert_y": reverse the turning direction of each axis
      */

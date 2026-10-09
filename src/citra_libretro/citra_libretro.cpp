@@ -195,7 +195,8 @@ static void UpdateSettings() {
     // Circle Pad
     Settings::values.current_input_profile.analogs[0] = "axis:0,joystick:0,engine:libretro";
     // C-Stick
-    if (LibRetro::settings.analog_function != LibRetro::CStickFunction::Touchscreen) {
+    if (LibRetro::settings.analog_function != LibRetro::CStickFunction::Touchscreen &&
+        !LibRetro::settings.motion_from_right_stick) {
         Settings::values.current_input_profile.analogs[1] = "axis:1,joystick:0,engine:libretro";
     } else {
         Settings::values.current_input_profile.analogs[1] = "";

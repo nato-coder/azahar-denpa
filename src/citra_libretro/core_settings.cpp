@@ -8,6 +8,7 @@
 #include "citra_libretro/environment.h"
 
 #include "common/file_util.h"
+#include "common/param_package.h"
 #include "common/settings.h"
 #include "core/hle/service/cfg/cfg.h"
 
@@ -704,6 +705,7 @@ static constexpr retro_core_option_v2_definition option_definitions[] = {
         config::category::input,
         {
             { config::enabled, "Enabled" },
+            { "right_stick", "Right Analog Stick" },
             { config::disabled, "Disabled" },
             { nullptr, nullptr }
         },
@@ -1136,13 +1138,22 @@ static void ParseInputOptions(void) {
         LibRetro::FetchVariable(config::input::enable_touch_pointer_timeout, config::enabled) ==
         config::enabled;
 
-    LibRetro::settings.enable_motion =
-        LibRetro::FetchVariable(config::input::enable_motion, config::enabled) == config::enabled;
+    const auto motion_mode = LibRetro::FetchVariable(config::input::enable_motion, config::enabled);
+    LibRetro::settings.enable_motion = motion_mode == config::enabled;
+    LibRetro::settings.motion_from_right_stick = motion_mode == "right_stick";
     auto motion_sens = LibRetro::FetchVariable(config::input::motion_sensitivity, "1.0");
     LibRetro::settings.motion_sensitivity = std::stof(motion_sens);
 
     // Configure motion device based on user settings
-    if (LibRetro::settings.enable_motion) {
+    if (LibRetro::settings.motion_from_right_stick) {
+        // The right stick turns the 3DS instead of acting as the C-Stick or touch pointer
+        Common::ParamPackage motion_param;
+        motion_param.Set("engine", "stick_motion");
+        motion_param.Set("analog", "axis:1,joystick:0,engine:libretro");
+        motion_param.Set("max_rate", 90.0f * LibRetro::settings.motion_sensitivity);
+        Settings::values.current_input_profile.motion_device = motion_param.Serialize();
+        Settings::values.current_input_profile.analogs[1] = "";
+    } else if (LibRetro::settings.enable_motion) {
         Settings::values.current_input_profile.motion_device =
             "port:0,sensitivity:" + std::to_string(LibRetro::settings.motion_sensitivity) +
             ",engine:libretro";
