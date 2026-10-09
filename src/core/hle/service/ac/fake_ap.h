@@ -16,7 +16,7 @@ namespace Service::AC::FakeAP {
 constexpr std::size_t NumAccessPoints = 15;
 
 /// Interval after which the fake access point list is regenerated.
-constexpr u64 RegenerateIntervalSeconds = 60;
+constexpr u64 RegenerateIntervalSeconds = 20;
 
 /// One access point entry as returned by AC:ScanAPs (0x34 bytes).
 struct APEntry {
